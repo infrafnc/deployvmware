@@ -1,0 +1,4 @@
+---
+vcenter_user: kaique@vsphere.local
+vcenter_pass: Fnc@2018
+vm_name: testeRole
