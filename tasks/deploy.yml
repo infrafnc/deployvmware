@@ -1,53 +1,34 @@
 ---
-#- name: Define usuário e senha do VMWare
-#  vars_prompt:
-#    - name: "vm_name"
-#      prompt: "vm name"
-#      private: no
-#    name: "vcenter_user"
-#    prompt: "Enter vcenter username"
-#    private: no
-#    name: "vcenter_pass"
-#    prompt: "Enter vcenter password"
-#    private: yes
-
-#- name: Tipo de conexão VMWare
-#  gather_facts: false
-#  connection: local
-#  user: remote
-#  sudo: true
-
-- name: Cria máquina virtual
-  vsphere_guest:
-    validate_certs: false
-    vcenter_hostname: 192.168.0.50
+- name: Cria a máquina virtual
+  vmware_guest:
+    hostname: 192.168.0.50
     username: "{{ vcenter_user }}"
     password: "{{ vcenter_pass }}"
-    guest: "{{ vm_name }}"
-    from_template: yes
-    template_src: fncsrvdocker
+    validate_certs: no
+    folder: FNCIT/vm
+    datacenter: FNCIT
     cluster: FNCLAB
-    esxi:
-      hostname: 192.168.0.40
-      datacenter: FNCIT
+    name: "{{ vm_name }}" 
+    template: fncsrvdocker
+    state: poweredon
+    wait_for_ip_address: yes
 
-- name: Aguarda 90 segundos para criação da VM 
-  pause: seconds=90
-
-- name: Pega infos da VM 
-  vsphere_guest:
-    validate_certs: false
-    vcenter_hostname: 192.168.0.50
+- name: Armazena facts da vm recém criada
+  vmware_guest_facts:
+    hostname: 192.168.0.50
     username: "{{ vcenter_user }}"
     password: "{{ vcenter_pass }}"
-    guest: "{{ vm_name }}"
-    vmware_guest_facts: yes
+    datacenter: FNCIT
+    validate_certs: no
+    name: "{{ vm_name }}"
+  delegate_to: localhost
+  register: facts
 
 - name: Debuga o IP
-  debug: msg="Ip da maquina {{ hw_eth0.ipaddresses[0] }}"
+  debug: msg="Ip da maquina {{ facts.instance.ipv4 }}"
 
 - name: Adiciona o host novamaquina 
   add_host:
-    name: "{{ hw_eth0.ipaddresses[0] }}"
+    name: "{{ facts.instance.ipv4 }}"
     groups: novamaquina
     ansible_ssh_pass: Uru100bu
